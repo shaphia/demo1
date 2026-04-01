@@ -1,0 +1,64 @@
+// Jenkinsfile
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven3'    // must match name in Jenkins Global Tools
+        jdk 'JDK11'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Cloning repository...'
+                git branch: 'main',
+                    url: 'https://github.com/your-username/my-maven-app.git'
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                echo 'Compiling source code...'
+                bat 'mvn compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running unit tests...'
+                bat 'mvn test'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                echo 'Packaging into JAR...'
+                bat 'mvn package -DskipTests'
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                echo 'Archiving artifacts...'
+                archiveArtifacts artifacts: '**/target/*.jar',
+                                 fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build Successful!'
+        }
+        failure {
+            echo '❌ Build Failed! Check logs.'
+        }
+    }
+}
